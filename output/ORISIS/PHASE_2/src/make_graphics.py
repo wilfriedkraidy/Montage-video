@@ -48,7 +48,9 @@ def load_countries():
             polys = [[ring(r) for r in g["arcs"]]]
         elif g["type"] == "MultiPolygon":
             polys = [[ring(r) for r in p] for p in g["arcs"]]
-        res[str(g.get("id", ""))] = polys
+        # clé = code ISO numérique sur 3 chiffres ; entités sans code (ex. Somaliland) -> "name:<nom>"
+        key = str(g["id"]).zfill(3) if g.get("id") else "name:" + g["properties"].get("name", "")
+        res[key] = polys
     return res
 
 def proj(lon0, lat0, lon1, lat1, w, h, pad=0):
@@ -67,7 +69,9 @@ def mask_of(countries, ids, P, size, ss=3):
     m = Image.new("L", (size[0] * ss, size[1] * ss), 0); d = ImageDraw.Draw(m)
     Ps = lambda lon, lat: tuple(v * ss for v in P(lon, lat))
     for i in ids:
-        draw_polys(d, countries.get(i, []), Ps, 255)
+        polys = countries.get(i if i.startswith("name:") else i.zfill(3))
+        assert polys, "pays introuvable dans les données : " + i
+        draw_polys(d, polys, Ps, 255)
     return m.resize(size, Image.LANCZOS)
 
 def gold_fill(mask, c0=(120, 86, 40), c1=GOLD, noise=18):
@@ -248,7 +252,7 @@ def icons():
     finish(m, "ICON_VIN.png")
 
 # ------------------------------------------------------------------ Afrique + loupe
-AFRICA_IDS = "12 24 72 108 120 132 140 148 174 178 180 204 226 231 232 262 266 270 288 324 384 404 426 430 434 450 454 466 478 480 504 508 516 562 566 624 646 678 686 690 694 706 710 716 728 729 732 748 768 788 800 818 834 854 894".split()
+AFRICA_IDS = "name:Somaliland 12 24 72 108 120 132 140 148 174 178 180 204 226 231 232 262 266 270 288 324 384 404 426 430 434 450 454 466 478 480 504 508 516 562 566 624 646 678 686 690 694 706 710 716 728 729 732 748 768 788 800 818 834 854 894".split()
 
 def africa(C):
     w, h = 1200, 1300
