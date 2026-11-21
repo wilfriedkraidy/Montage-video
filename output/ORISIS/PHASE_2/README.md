@@ -35,6 +35,12 @@ Le format `.aep` est un format binaire propriétaire d'Adobe. On ne peut le cré
 | `audio/` | `VOICE_STEM.wav`, `MUSIC.wav` (musique originale, déjà atténuée sous la voix) et `SFX.wav` (bruitages + ambiances), aux niveaux finaux : voix + musique + effets = mixage final ; `VOICE.wav` = voix montée avant mixage |
 | `fonts/` | Cinzel, Montserrat (licence SIL OFL) |
 
+## Vérifications effectuées
+- `OSIRIS_FINAL.mp4` : décodage complet sans erreur ; vidéo et audio durent chacun 147,4 s ; -14,1 LUFS intégrés, crête -1,5 dBTP ; aucun noir ni silence parasite.
+- Contrôle visuel d'une image au milieu de chaque scène et au milieu de chaque transition. Toutes les coupes de la Phase 1 sont couvertes par un plan B-roll ou par un fondu.
+- `OSIRIS_AFTER_EFFECTS_2022.jsx` : analyse syntaxique ES3 stricte (dialecte ExtendScript) et exécution complète sur un modèle objet After Effects simulé (`src/tests/ae_mock_test.js`) : 86 compositions, 465 calques, 4 294 images clés, 0 avertissement.
+- Le script n'a pas pu être exécuté dans un After Effects réel (logiciel absent de l'environnement de fabrication).
+
 ## Chaîne de fabrication (`src/`)
 Les commandes se lancent depuis la racine du dépôt, dans cet ordre :
 ```

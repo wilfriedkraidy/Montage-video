@@ -54,7 +54,7 @@ def aroll():
              "acompressor=threshold=-24dB:ratio=2.5:attack=10:release=150,"
              "loudnorm=I=-16:TP=-1.5:LRA=8,aresample=48000[oa]")
     run(["ffmpeg", "-v", "error", "-y", *ins, "-filter_complex", ";".join(f),
-         "-map", "[ov]", "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-r", "30", out_v,
+         "-map", "[ov]", "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-r", "30", out_v,
          "-map", "[oa]", "-c:a", "pcm_s16le", "-ac", "1", out_a])
 
 def broll():
