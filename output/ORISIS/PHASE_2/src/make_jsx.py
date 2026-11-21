@@ -43,6 +43,7 @@ def solid(color, w, h, name, **kw):
 
 COMPS = []
 def comp(cid, w, h, dur, layers):
+    assert cid not in {c["id"] for c in COMPS}, "identifiant de composition en double : " + cid
     COMPS.append({"id": cid, "w": int(w), "h": int(h), "dur": r3(dur), "layers": layers}); return cid
 
 CAMERA = {"type": "camera", "zoom": ZOOM}
@@ -70,7 +71,7 @@ def scene(i, s):
                    "scale": lin_keys(TR / 2, d + TR / 2, k * 1.12, k * 1.2, a, b),
                    "fx": [{"m": "ADBE Gaussian Blur 2", "p": {"ADBE Gaussian Blur 2-0001": 60, "ADBE Gaussian Blur 2-0003": 1}}]})
         Ls.append(solid((0, 0, 0), W, H, "assombrir", opacity=60))
-        sub = comp(s["id"] + "_PLATE", 1060, 454, b, [
+        sub = comp(s["id"] + "_VIDEO", 1060, 454, b, [
             {"type": "footage", "src": foot(fp(s["clip"])), "name": s["clip"], "start": r3(TR / 2 - HANDLE), "scale": 1060 / 1280 * 100},
             {"type": "rect", "name": "filet or", "w": 1060, "h": 454, "stroke": rgb(R.GOLD), "sw": 3},
             {"type": "rect", "name": "filet fin", "w": 1046, "h": 440, "stroke": rgb(R.GOLD_L), "sw": 1, "opacity": 45}])

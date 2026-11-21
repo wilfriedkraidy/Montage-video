@@ -4,6 +4,7 @@
 var fs = require("fs"), path = require("path"), vm = require("vm");
 var jsxPath = path.resolve(process.argv[2]);
 var ROOT = path.dirname(jsxPath);
+var COMP_NAMES = {};
 var stats = { comps: 0, layers: 0, keys: 0, effects: {}, errors: [] };
 
 var PVT = { NO_VALUE: 0, ThreeD_SPATIAL: 1, ThreeD: 2, TwoD_SPATIAL: 3, TwoD: 4, OneD: 5, COLOR: 6, CUSTOM_VALUE: 7, MARKER: 8, LAYER_INDEX: 9, MASK_INDEX: 10, SHAPE: 11, TEXT_DOCUMENT: 12 };
@@ -122,7 +123,16 @@ Object.defineProperty(Layer.prototype, "transform", { get: function () { return 
 
 function Layers(comp) { this.comp = comp; this.list = []; }
 Layers.prototype._push = function (L) { this.list.unshift(L); return L; };
-Layers.prototype.add = function (item) { if (!item || !(item instanceof FootageItem || item instanceof CompItem)) throw new Error("layers.add : item invalide"); return this._push(new Layer(this.comp, item instanceof CompItem ? "comp" : "footage", item)); };
+function contains(c, target) {   /* vrai si la comp c contient (directement ou non) la comp target */
+    if (c === target) return true;
+    for (var i = 0; i < c.layers.list.length; i++) { var s = c.layers.list[i].source; if (s instanceof CompItem && contains(s, target)) return true; }
+    return false;
+}
+Layers.prototype.add = function (item) {
+    if (!item || !(item instanceof FootageItem || item instanceof CompItem)) throw new Error("layers.add : item invalide");
+    if (item instanceof CompItem && contains(item, this.comp)) throw new Error("dependance circulaire : " + item.name + " dans " + this.comp.name);
+    return this._push(new Layer(this.comp, item instanceof CompItem ? "comp" : "footage", item));
+};
 Layers.prototype.addSolid = function (c, n, w, h, pa, d) { if (c.length !== 3 || !(w > 0) || !(h > 0) || !(d > 0)) throw new Error("addSolid args"); return this._push(new Layer(this.comp, "solid")); };
 Layers.prototype.addNull = function (d) { return this._push(new Layer(this.comp, "null")); };
 Layers.prototype.addCamera = function (n, c) { if (c.length !== 2) throw new Error("addCamera"); return this._push(new Layer(this.comp, "camera")); };
@@ -136,13 +146,16 @@ function FootageItem(f) { this.file = f; this.name = path.basename(f); this.isSt
 function CompItem(n, w, h, pa, d, fps) {
     if (!(w >= 4 && w <= 30000 && h >= 4 && h <= 30000 && d > 0 && d <= 10800 && fps > 0)) throw new Error("addComp args invalides " + [n, w, h, d, fps]);
     if (w % 1 || h % 1) throw new Error("addComp : dimensions entieres requises");
+    if (COMP_NAMES[n]) throw new Error("composition en double : " + n);
+    COMP_NAMES[n] = 1;
     this.name = n; this.width = w; this.height = h; this.duration = d; this.frameRate = fps; this.layers = new Layers(this); stats.comps++;
 }
 CompItem.prototype.openInViewer = function () { };
 function TextDocument(s) { this.text = s; this.font = "ArialMT"; this.fontSize = 36; this.fillColor = [1, 1, 1]; }
 TextDocument.prototype.resetCharStyle = function () { };
 var project = {
-    items: { addFolder: function (n) { return new FolderItem(n); }, addComp: function (n, w, h, pa, d, fps) { return new CompItem(n, w, h, pa, d, fps); } },
+    items: { addFolder: function (n) { return new FolderItem(n); }, addComp: function (n, w, h, pa, d, fps) { var c = new CompItem(n, w, h, pa, d, fps); project._all.push(c); return c; } },
+    _all: [],
     importFile: function (io) { if (!fs.existsSync(io.file.fsName)) throw new Error("fichier absent"); return new FootageItem(io.file.fsName); },
     renderQueue: { items: { add: function (c) { return { outputModule: function () { return {}; } }; } } },
     save: function (f) { stats.saved = f.fsName; }
@@ -160,8 +173,11 @@ var ctx = {
 };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(jsxPath, "utf8"), ctx, { filename: jsxPath });
+var plates = 0;
+project._all.forEach(function (c) { if (/_PLATE$/.test(c.name)) { if (!c.layers.list.some(function (L) { return L.source instanceof CompItem && /_VIDEO$/.test(L.source.name); })) stats.errors.push("plan video absent dans " + c.name); else plates++; } });
+console.log("scenes PLATE avec plan video:", plates, stats.errors.length ? stats.errors : "");
 console.log("compositions:", stats.comps, "| calques:", stats.layers, "| cles:", stats.keys);
 console.log("effets:", JSON.stringify(stats.effects));
 console.log("projet enregistre:", stats.saved ? path.basename(stats.saved) : "NON");
 console.log("ALERT >>>", stats.alert);
-process.exit(/avertissement/.test(stats.alert || "") ? 1 : 0);
+process.exit(/avertissement/.test(stats.alert || "") || stats.errors.length ? 1 : 0);
