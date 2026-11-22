@@ -1,5 +1,7 @@
 # OSIRIS – Phase 2 : motion design
 
+> **Projet validé – stockage allégé.** Les vidéos générées et les médias intermédiaires ont été retirés du dépôt après validation : `OSIRIS_FINAL.mp4`, l'archive ZIP, la vidéo de validation de la Phase 1, et dans `media/` les dossiers aroll, broll, audio, stills et graphics. Ils restent disponibles dans l'historique Git (commit `5ce0114`). On peut aussi les régénérer à l'identique depuis les rushes et illustrations du dépôt avec la chaîne `src/` (voir plus bas), dans l'ordre : `timeline.py`, `prep_media.py`, `make_graphics.py`, `make_audio.py`, `render.py`.
+
 ## Livrables
 | Fichier | Contenu |
 |---|---|
